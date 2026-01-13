@@ -1,1 +1,1 @@
-这是一条笔记
+liu-zlong.github.io/Lomg
