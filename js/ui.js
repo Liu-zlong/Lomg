@@ -13,6 +13,10 @@ export class UIManager {
         this.blobUrls = new Set();
         // 存储当前笔记的原始 Markdown
         this.currentRawMarkdown = null;
+        // 存储当前文件的路径
+        this.currentFilePath = null;
+        // 存储扁平化的文件列表
+        this.flatFileList = [];
 
         this.dom = {
             sidebar: document.getElementById("sidebar"),
@@ -692,6 +696,10 @@ export class UIManager {
             }
         }
 
+        // 保存当前文件路径
+        this.currentFilePath = item.path;
+        this.buildFlatFileList();
+
         // 2. UI 状态更新：面包屑（可点击路径）
         this.revealInTree(item.path);
         const pathParts = item.path.split("/");
@@ -1114,7 +1122,8 @@ export class UIManager {
                 orange: '#ea580c',
                 red: '#dc2626',
                 pink: '#db2777',
-                rose: '#e11d48'
+                rose: '#e11d48',
+                teal: '#0d9488'
             },
             dark: {
                 blue: '#60a5fa',
@@ -1123,7 +1132,8 @@ export class UIManager {
                 orange: '#fb923c',
                 red: '#f87171',
                 pink: '#f472b6',
-                rose: '#fb7185'
+                rose: '#fb7185',
+                teal: '#2dd4bf'
             }
         };
         return colors[mode][color];
@@ -1171,6 +1181,12 @@ export class UIManager {
                         break;
                     case 'scroll-bottom':
                         this.scrollToBottom();
+                        break;
+                    case 'history-back':
+                        this.navigateToPrevNote();
+                        break;
+                    case 'history-forward':
+                        this.navigateToNextNote();
                         break;
                 }
 
@@ -1262,5 +1278,91 @@ export class UIManager {
             top: this.dom.contentViewport.scrollHeight,
             behavior: 'smooth'
         });
+    }
+
+    /**
+     * 构建扁平化的文件列表
+     */
+    buildFlatFileList() {
+        this.flatFileList = [];
+        const traverse = (nodes) => {
+            nodes.forEach(node => {
+                if (node.type === 'file') {
+                    this.flatFileList.push(node);
+                }
+                if (node.children && node.children.length) {
+                    traverse(node.children);
+                }
+            });
+        };
+        traverse(this.dataManager.treeData || []);
+    }
+
+    /**
+     * 获取当前文件的目录路径
+     */
+    getCurrentDirectory() {
+        if (!this.currentFilePath) return null;
+        const parts = this.currentFilePath.split('/');
+        parts.pop();
+        return parts.join('/');
+    }
+
+    /**
+     * 获取目录中的上一个文件
+     */
+    getPrevFileInDirectory() {
+        if (!this.currentFilePath) return null;
+        const currentDir = this.getCurrentDirectory();
+        const filesInDir = this.flatFileList.filter(f => {
+            const fDir = f.path.split('/').slice(0, -1).join('/');
+            return fDir === currentDir;
+        });
+        const currentIndex = filesInDir.findIndex(f => f.path === this.currentFilePath);
+        if (currentIndex > 0) {
+            return filesInDir[currentIndex - 1];
+        }
+        return null;
+    }
+
+    /**
+     * 获取目录中的下一个文件
+     */
+    getNextFileInDirectory() {
+        if (!this.currentFilePath) return null;
+        const currentDir = this.getCurrentDirectory();
+        const filesInDir = this.flatFileList.filter(f => {
+            const fDir = f.path.split('/').slice(0, -1).join('/');
+            return fDir === currentDir;
+        });
+        const currentIndex = filesInDir.findIndex(f => f.path === this.currentFilePath);
+        if (currentIndex >= 0 && currentIndex < filesInDir.length - 1) {
+            return filesInDir[currentIndex + 1];
+        }
+        return null;
+    }
+
+    /**
+     * 跳转到上一个笔记
+     */
+    navigateToPrevNote() {
+        const prevFile = this.getPrevFileInDirectory();
+        if (prevFile) {
+            this.setActiveFile(prevFile);
+        } else {
+            this.showToast('已经是第一个文件');
+        }
+    }
+
+    /**
+     * 跳转到下一个笔记
+     */
+    navigateToNextNote() {
+        const nextFile = this.getNextFileInDirectory();
+        if (nextFile) {
+            this.setActiveFile(nextFile);
+        } else {
+            this.showToast('已经是最后一个文件');
+        }
     }
 }

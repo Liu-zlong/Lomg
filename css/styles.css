@@ -101,6 +101,9 @@
 [data-theme="light-rose"] {
     --accent-color: #e11d48;
 }
+[data-theme="light-teal"] {
+    --accent-color: #0d9488;
+}
 
 /* Dark 颜色主题 */
 [data-theme="dark"],
@@ -124,6 +127,9 @@
 }
 [data-theme="dark-rose"] {
     --accent-color: #fb7185;
+}
+[data-theme="dark-teal"] {
+    --accent-color: #2dd4bf;
 }
 
 /* 第五层: 依赖 accent-color 的变量 */
